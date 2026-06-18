@@ -2,30 +2,11 @@ import { FormEvent, useEffect, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/Button";
 import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
+import { isColombiaPollaClosed } from "@/features/colombia-polla/colombiaPollaConfig";
+import { ColombiaQuestion, colombiaQuestions } from "@/features/colombia-polla/colombiaQuestions";
 import { useActiveParticipantStore } from "@/features/family-users/activeParticipantStore";
 import { listColombiaBetsByParticipant, saveColombiaBets } from "@/infrastructure/repositories/colombiaBetsRepository";
 import { searchPlayers, searchTeams } from "@/infrastructure/repositories/searchRepository";
-
-type QuestionType = "player" | "team" | "number" | "text";
-
-type Question = {
-  key: string;
-  label: string;
-  type: QuestionType;
-  placeholder: string;
-};
-
-const questions: Question[] = [
-  { key: "first_colombia_goal", label: "Primer jugador de Colombia en marcar gol", type: "player", placeholder: "Buscar jugador" },
-  { key: "top_colombia_scorer", label: "Goleador de Colombia en el Mundial", type: "player", placeholder: "Buscar jugador" },
-  { key: "messi_goals", label: "Cuantos goles mete Messi", type: "number", placeholder: "Numero de goles" },
-  { key: "ronaldo_goals", label: "Cuantos goles mete Cristiano Ronaldo", type: "number", placeholder: "Numero de goles" },
-  { key: "colombia_finish", label: "Hasta donde llega Colombia", type: "text", placeholder: "Ej: octavos, cuartos, campeon" },
-  { key: "world_cup_top_scorer", label: "Goleador del Mundial", type: "player", placeholder: "Buscar jugador" },
-  { key: "world_cup_assist_leader", label: "Lider de asistencias", type: "player", placeholder: "Buscar jugador" },
-  { key: "first_eliminated", label: "Primer eliminado", type: "team", placeholder: "Buscar seleccion" },
-  { key: "champion", label: "Campeon del Mundial", type: "team", placeholder: "Buscar seleccion" }
-];
 
 type DraftAnswer = {
   query: string;
@@ -38,10 +19,12 @@ type DraftAnswer = {
 function ColombiaQuestionInput({
   question,
   value,
+  disabled,
   onChange
 }: {
-  question: Question;
+  question: ColombiaQuestion;
   value: DraftAnswer;
+  disabled?: boolean;
   onChange: (value: DraftAnswer) => void;
 }) {
   const playerSearch = useQuery({
@@ -62,6 +45,7 @@ function ColombiaQuestionInput({
         min="0"
         placeholder={question.placeholder}
         value={value.numericAnswer ?? ""}
+        disabled={disabled}
         onChange={(event) => onChange({ ...value, numericAnswer: event.target.value, answerText: event.target.value })}
       />
     );
@@ -72,6 +56,7 @@ function ColombiaQuestionInput({
       <input
         placeholder={question.placeholder}
         value={value.answerText ?? ""}
+        disabled={disabled}
         onChange={(event) => onChange({ ...value, answerText: event.target.value })}
       />
     );
@@ -84,6 +69,7 @@ function ColombiaQuestionInput({
       <input
         placeholder={question.placeholder}
         value={value.query}
+        disabled={disabled}
         onChange={(event) => onChange({ query: event.target.value, answerText: event.target.value })}
       />
       {options.length > 0 ? (
@@ -92,6 +78,7 @@ function ColombiaQuestionInput({
             <button
               key={option.id}
               type="button"
+              disabled={disabled}
               onClick={() =>
                 onChange({
                   query: option.label,
@@ -121,7 +108,7 @@ export function ColombiaPollaPage() {
   const mutation = useMutation({
     mutationFn: () =>
       saveColombiaBets(
-        questions.map((question) => {
+        colombiaQuestions.map((question) => {
           const answer = answers[question.key] ?? { query: "" };
           return {
             participantId: activeParticipant?.id ?? "",
@@ -137,7 +124,7 @@ export function ColombiaPollaPage() {
 
   useEffect(() => {
     const nextAnswers = Object.fromEntries(
-      questions.map((question) => {
+      colombiaQuestions.map((question) => {
         const stored = storedAnswers[question.key];
         return [
           question.key,
@@ -160,7 +147,7 @@ export function ColombiaPollaPage() {
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!activeParticipant) return;
+    if (!activeParticipant || isColombiaPollaClosed) return;
     mutation.mutate();
   }
 
@@ -170,6 +157,7 @@ export function ColombiaPollaPage() {
         <p className="eyebrow">Premio sorpresa</p>
         <h2>Polla Colombia</h2>
       </div>
+      {isColombiaPollaClosed ? <p className="form-success">La polla Colombia ya esta cerrada. Tus respuestas quedan en solo lectura.</p> : null}
       {!activeParticipant ? <p className="form-error">Selecciona un participante antes de guardar respuestas.</p> : null}
       <Card>
         <CardHeader>
@@ -178,12 +166,13 @@ export function ColombiaPollaPage() {
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <div className="question-list">
-            {questions.map((question) => (
+            {colombiaQuestions.map((question) => (
               <label key={question.key}>
                 {question.label}
                 <ColombiaQuestionInput
                   question={question}
                   value={answers[question.key] ?? { query: "" }}
+                  disabled={isColombiaPollaClosed}
                   onChange={(value) => updateAnswer(question.key, value)}
                 />
               </label>
@@ -192,7 +181,7 @@ export function ColombiaPollaPage() {
           {mutation.isError ? <p className="form-error">No pude guardar las respuestas.</p> : null}
           {mutation.isSuccess ? <p className="form-success">Respuestas guardadas.</p> : null}
           <div className="card-actions">
-            <Button disabled={!activeParticipant || mutation.isPending}>{mutation.isPending ? "Guardando..." : "Guardar respuestas"}</Button>
+            <Button disabled={!activeParticipant || isColombiaPollaClosed || mutation.isPending}>{isColombiaPollaClosed ? "Polla cerrada" : mutation.isPending ? "Guardando..." : "Guardar respuestas"}</Button>
           </div>
         </form>
       </Card>

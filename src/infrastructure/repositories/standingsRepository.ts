@@ -41,6 +41,55 @@ type PlayerRow = {
   photo_url: string | null;
 };
 
+type ColombiaBetRow = {
+  participant_id: string;
+  question_key: string;
+  answer_text: string | null;
+  selected_team_id: string | null;
+  selected_player_id: string | null;
+  numeric_answer: number | null;
+};
+
+type ColombiaAnswerRow = {
+  question_key: string;
+  answer_text: string | null;
+  selected_team_id: string | null;
+  selected_player_id: string | null;
+  numeric_answer: number | null;
+  points: number;
+  is_closed?: boolean;
+};
+
+function normalizeAnswer(value?: string | null) {
+  return (value ?? "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
+function officialAnswerHasValue(answer: ColombiaAnswerRow) {
+  return Boolean(answer.is_closed && (answer.answer_text || answer.selected_team_id || answer.selected_player_id || answer.numeric_answer !== null));
+}
+
+function isCorrectColombiaAnswer(bet: ColombiaBetRow, answer: ColombiaAnswerRow) {
+  if (!officialAnswerHasValue(answer)) return false;
+
+  if (answer.selected_player_id) {
+    return bet.selected_player_id === answer.selected_player_id || normalizeAnswer(bet.answer_text) === normalizeAnswer(answer.answer_text);
+  }
+
+  if (answer.selected_team_id) {
+    return bet.selected_team_id === answer.selected_team_id;
+  }
+
+  if (answer.numeric_answer !== null) {
+    return bet.numeric_answer === answer.numeric_answer;
+  }
+
+  return normalizeAnswer(bet.answer_text) === normalizeAnswer(answer.answer_text);
+}
+
 export async function listMatchStandings(): Promise<StandingRow[]> {
   const participants = await listParticipants();
   const baseRows = participants.map((participant) => ({
@@ -121,9 +170,39 @@ export async function listMatchStandings(): Promise<StandingRow[]> {
 
 export async function listColombiaStandings(): Promise<StandingRow[]> {
   const participants = await listParticipants();
-  return participants.map((participant) => ({
+  const baseRows = participants.map((participant) => ({
     participantId: participant.id,
     displayName: participant.displayName,
     points: 0
   }));
+
+  if (!supabase || participants.length === 0) return baseRows;
+
+  const [
+    { data: bets, error: betsError },
+    { data: answers, error: answersError }
+  ] = await Promise.all([
+    supabase.from("colombia_bets").select("participant_id, question_key, answer_text, selected_team_id, selected_player_id, numeric_answer"),
+    supabase.from("colombia_answers").select("question_key, answer_text, selected_team_id, selected_player_id, numeric_answer, points, is_closed")
+  ]);
+
+  if (betsError) throw betsError;
+  if (answersError) throw answersError;
+
+  const answersByQuestion = new Map<string, ColombiaAnswerRow>(
+    ((answers ?? []) as ColombiaAnswerRow[]).map((answer) => [answer.question_key, answer])
+  );
+
+  const pointsByParticipant = new Map(baseRows.map((row) => [row.participantId, 0]));
+
+  for (const bet of (bets ?? []) as ColombiaBetRow[]) {
+    const answer = answersByQuestion.get(bet.question_key);
+    if (!answer || !isCorrectColombiaAnswer(bet, answer)) continue;
+
+    pointsByParticipant.set(bet.participant_id, (pointsByParticipant.get(bet.participant_id) ?? 0) + answer.points);
+  }
+
+  return baseRows
+    .map((row) => ({ ...row, points: pointsByParticipant.get(row.participantId) ?? 0 }))
+    .sort((a, b) => b.points - a.points || a.displayName.localeCompare(b.displayName));
 }

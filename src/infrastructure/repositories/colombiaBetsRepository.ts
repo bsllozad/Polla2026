@@ -1,4 +1,5 @@
 import { supabase } from "@/infrastructure/supabase/client";
+import { isColombiaPollaClosed } from "@/features/colombia-polla/colombiaPollaConfig";
 
 export type ColombiaBetInput = {
   participantId: string;
@@ -45,6 +46,7 @@ export async function listColombiaBetsByParticipant(participantId?: string): Pro
 
 export async function saveColombiaBets(inputs: ColombiaBetInput[]): Promise<void> {
   if (!supabase) throw new Error("Supabase no esta configurado.");
+  if (isColombiaPollaClosed) throw new Error("La polla Colombia ya esta cerrada.");
   if (inputs.length === 0) return;
 
   const rows = inputs.map((input) => ({

@@ -125,6 +125,7 @@ export function AdminResultsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["match-result", match?.id] });
       queryClient.invalidateQueries({ queryKey: ["match-standings"] });
+      queryClient.invalidateQueries({ queryKey: ["colombia-standings"] });
       queryClient.invalidateQueries({ queryKey: ["world-cup-top-scorers"] });
     }
   });

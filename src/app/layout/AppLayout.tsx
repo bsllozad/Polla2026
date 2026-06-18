@@ -1,5 +1,5 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { CalendarDays, ClipboardList, LogOut, Medal, ShieldCheck, Trophy, UsersRound } from "lucide-react";
+import { CalendarDays, ClipboardCheck, ClipboardList, ListChecks, LogOut, Medal, ShieldCheck, Trophy, UsersRound } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/Button";
 import { useActiveParticipantStore } from "@/features/family-users/activeParticipantStore";
@@ -13,6 +13,9 @@ const navItems = [
   { to: "/puntos-partidos", label: "Puntos partidos", icon: ClipboardList },
   { to: "/posiciones", label: "Posiciones", icon: Medal },
   { to: "/colombia", label: "Polla Colombia", icon: ShieldCheck },
+  { to: "/puntos-colombia", label: "Puntos Colombia", icon: ListChecks },
+  { to: "/resultados-colombia", label: "Resultados Colombia", icon: ShieldCheck },
+  { to: "/resultados", label: "Resultados", icon: ClipboardCheck, adminOnly: true },
   { to: "/usuarios", label: "Usuarios", icon: UsersRound, adminOnly: true }
 ];
 
@@ -56,11 +59,6 @@ export function AppLayout() {
             </NavLink>
           ))}
         </nav>
-        {isAdmin ? (
-          <NavLink to="/admin-resultados" className="admin-link">
-            Admin resultados
-          </NavLink>
-        ) : null}
       </aside>
       <main className="main-layout">
         <header className="topbar">

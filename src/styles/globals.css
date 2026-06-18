@@ -415,6 +415,52 @@ label input {
   color: #3d4852;
 }
 
+.question-result-list {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.question-result-card {
+  border: 1px solid #edf0e6;
+  border-radius: 8px;
+  padding: 0.9rem;
+}
+
+.question-result-title,
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.question-result-title {
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.question-result-title h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.status-pill.pending {
+  background: #edf5f1;
+  color: #0b6b4f;
+}
+
+.colombia-breakdown strong {
+  text-align: right;
+}
+
+.checkbox-row {
+  grid-template-columns: auto minmax(0, 1fr);
+  justify-content: flex-start;
+}
+
+.checkbox-row input {
+  width: auto;
+}
+
 label {
   display: grid;
   gap: 0.35rem;
@@ -668,7 +714,8 @@ label {
   }
 
   .nav-list {
-    grid-template-columns: repeat(6, minmax(0, 1fr));
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(104px, 1fr);
     overflow-x: auto;
   }
 
