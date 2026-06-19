@@ -38,15 +38,6 @@ function PredictionCard({
     awayScorerId: ""
   });
 
-  useEffect(() => {
-    setDraft({
-      homeScore: String(storedPrediction?.homeScore ?? 0),
-      awayScore: String(storedPrediction?.awayScore ?? 0),
-      homeScorerId: storedPrediction?.homeScorerId ?? "",
-      awayScorerId: storedPrediction?.awayScorerId ?? ""
-    });
-  }, [storedPrediction, participantId, match.id]);
-
   const mutation = useMutation({
     mutationFn: () =>
       savePrediction({
@@ -60,8 +51,19 @@ function PredictionCard({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["stored-predictions", participantId] });
       queryClient.invalidateQueries({ queryKey: ["match-standings"] });
+      queryClient.invalidateQueries({ queryKey: ["match-point-details", participantId] });
     }
   });
+
+  useEffect(() => {
+    setDraft({
+      homeScore: String(storedPrediction?.homeScore ?? 0),
+      awayScore: String(storedPrediction?.awayScore ?? 0),
+      homeScorerId: storedPrediction?.homeScorerId ?? "",
+      awayScorerId: storedPrediction?.awayScorerId ?? ""
+    });
+    mutation.reset();
+  }, [storedPrediction, participantId, match.id]);
 
   function updateDraft(key: keyof PredictionDraft, value: string) {
     setDraft((current) => ({ ...current, [key]: value }));

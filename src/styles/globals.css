@@ -314,6 +314,38 @@ label input {
   padding: 0.55rem 0;
 }
 
+.scoring-rules {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.scoring-rules article {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.65rem;
+  align-items: start;
+  border: 1px solid #edf0e6;
+  border-radius: 8px;
+  padding: 0.85rem;
+}
+
+.scoring-rules svg {
+  color: #0b6b4f;
+  margin-top: 0.1rem;
+}
+
+.scoring-rules strong,
+.scoring-rules span {
+  display: block;
+}
+
+.scoring-rules span {
+  margin-top: 0.25rem;
+  color: #59636e;
+  line-height: 1.35;
+}
+
 .prediction-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -740,6 +772,7 @@ label {
   .page-grid,
   .prediction-grid,
   .points-breakdown,
+  .scoring-rules,
   .score-editor {
     grid-template-columns: 1fr;
   }

@@ -1,4 +1,4 @@
-import { Clock, MapPin, TrendingUp } from "lucide-react";
+import { Award, Clock, Goal, ListChecks, MapPin, TrendingUp } from "lucide-react";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/Button";
@@ -66,6 +66,36 @@ export function DashboardPage() {
               </div>
             </article>
           ))}
+        </div>
+      </Card>
+
+      <Card className="span-2">
+        <CardHeader>
+          <CardTitle>Como se ganan puntos</CardTitle>
+          <ListChecks size={18} />
+        </CardHeader>
+        <div className="scoring-rules">
+          <article>
+            <Award size={20} />
+            <div>
+              <strong>Marcador exacto</strong>
+              <span>5 pts si aciertas los goles de ambos equipos.</span>
+            </div>
+          </article>
+          <article>
+            <TrendingUp size={20} />
+            <div>
+              <strong>Ganador o empate</strong>
+              <span>1 a 3 pts segun el resultado acertado y que tan cerca quedo el marcador.</span>
+            </div>
+          </article>
+          <article>
+            <Goal size={20} />
+            <div>
+              <strong>Goleador acertado</strong>
+              <span>Forward 3, volante ofensivo 5, volante marca 10, defensa 15, arquero 20.</span>
+            </div>
+          </article>
         </div>
       </Card>
 

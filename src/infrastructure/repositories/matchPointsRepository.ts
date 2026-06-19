@@ -1,5 +1,6 @@
 import { calculatePredictionScore } from "@/domain/scoring/matchScoring";
 import { listMatches } from "@/infrastructure/repositories/matchesRepository";
+import { listPlayersByIds } from "@/infrastructure/repositories/playersRepository";
 import { supabase } from "@/infrastructure/supabase/client";
 import { Match, MatchResult, Player, Prediction } from "@/shared/types/worldcup";
 
@@ -24,15 +25,6 @@ type GoalRow = {
   match_id: string;
   player_id: string | null;
   own_goal_player_id: string | null;
-};
-
-type PlayerRow = {
-  id: string;
-  team_id: string;
-  full_name: string;
-  position: Player["position"];
-  shirt_number: number | null;
-  photo_url: string | null;
 };
 
 export type MatchPointDetail = {
@@ -105,38 +97,30 @@ function buildReasons(prediction: Prediction | undefined, result: MatchResult, p
   return reasons;
 }
 
-function toPlayer(row: PlayerRow): Player {
-  return {
-    id: row.id,
-    teamId: row.team_id,
-    fullName: row.full_name,
-    position: row.position,
-    shirtNumber: row.shirt_number ?? undefined,
-    photoUrl: row.photo_url ?? undefined
-  };
-}
-
 export async function listMatchPointDetails(participantId?: string): Promise<MatchPointDetail[]> {
   if (!supabase || !participantId) return [];
 
   const matches = await listMatches({ limit: 104, showAll: true });
-  const [{ data: predictions, error: predictionsError }, { data: results, error: resultsError }, { data: goals, error: goalsError }, { data: players, error: playersError }] =
+  const [{ data: predictions, error: predictionsError }, { data: results, error: resultsError }, { data: goals, error: goalsError }] =
     await Promise.all([
       supabase
         .from("predictions")
         .select("participant_id, match_id, home_score, away_score, home_scorer_id, away_scorer_id, created_at")
         .eq("participant_id", participantId),
       supabase.from("match_results").select("match_id, home_score, away_score, status"),
-      supabase.from("goals").select("match_id, player_id, own_goal_player_id"),
-      supabase.from("players").select("id, team_id, full_name, position, shirt_number, photo_url")
+      supabase.from("goals").select("match_id, player_id, own_goal_player_id")
     ]);
 
   if (predictionsError) throw predictionsError;
   if (resultsError) throw resultsError;
   if (goalsError) throw goalsError;
-  if (playersError) throw playersError;
 
-  const playersById = new Map<string, Player>(((players ?? []) as PlayerRow[]).map((player) => [player.id, toPlayer(player)]));
+  const playerIds = [
+    ...((predictions ?? []) as PredictionRow[]).flatMap((prediction) => [prediction.home_scorer_id, prediction.away_scorer_id]),
+    ...((goals ?? []) as GoalRow[]).flatMap((goal) => [goal.player_id, goal.own_goal_player_id])
+  ].filter(Boolean) as string[];
+  const players = await listPlayersByIds(playerIds);
+  const playersById = new Map<string, Player>(players.map((player) => [player.id, player]));
   const predictionsByMatch = new Map<string, Prediction>(
     ((predictions ?? []) as PredictionRow[]).map((prediction) => [
       prediction.match_id,

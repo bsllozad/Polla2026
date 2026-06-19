@@ -38,14 +38,20 @@ export async function listPlayersByIds(playerIds: string[]): Promise<Player[]> {
   const uniquePlayerIds = [...new Set(playerIds)].filter(Boolean);
   if (!supabase || uniquePlayerIds.length === 0) return [];
 
-  const { data, error } = await supabase
-    .from("players")
-    .select("id, team_id, full_name, position, shirt_number, photo_url")
-    .in("id", uniquePlayerIds);
+  const rows: PlayerRow[] = [];
+  const chunkSize = 500;
+  for (let index = 0; index < uniquePlayerIds.length; index += chunkSize) {
+    const chunk = uniquePlayerIds.slice(index, index + chunkSize);
+    const { data, error } = await supabase
+      .from("players")
+      .select("id, team_id, full_name, position, shirt_number, photo_url")
+      .in("id", chunk);
 
-  if (error) throw error;
+    if (error) throw error;
+    rows.push(...((data ?? []) as PlayerRow[]));
+  }
 
-  return ((data ?? []) as PlayerRow[]).map((row) => ({
+  return rows.map((row) => ({
     id: row.id,
     teamId: row.team_id,
     fullName: row.full_name,

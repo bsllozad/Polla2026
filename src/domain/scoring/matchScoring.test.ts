@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { calculateMatchPoints } from "@/domain/scoring/matchScoring";
-import { MatchResult, Prediction } from "@/shared/types/worldcup";
+import { calculateMatchPoints, calculatePredictionScore } from "@/domain/scoring/matchScoring";
+import { MatchResult, Player, Prediction } from "@/shared/types/worldcup";
 
 const basePrediction: Prediction = {
   participantId: "p1",
@@ -37,5 +37,33 @@ describe("calculateMatchPoints", () => {
 
   it("gives 2 for other non-exact draw", () => {
     expect(calculateMatchPoints({ ...basePrediction, homeScore: 0, awayScore: 0 }, result(2, 2))).toBe(2);
+  });
+});
+
+describe("calculatePredictionScore", () => {
+  it("adds bonuses for selected scorers from both teams", () => {
+    const homeScorer: Player = {
+      id: "home-scorer",
+      teamId: "home",
+      fullName: "Home Midfielder",
+      position: "attacking_midfielder"
+    };
+    const awayScorer: Player = {
+      id: "away-scorer",
+      teamId: "away",
+      fullName: "Away Forward",
+      position: "forward"
+    };
+    const score = calculatePredictionScore(
+      { ...basePrediction, homeScore: 2, awayScore: 1, homeScorerId: homeScorer.id, awayScorerId: awayScorer.id },
+      { ...result(4, 1), scorerIds: [homeScorer.id, awayScorer.id] },
+      new Map([
+        [homeScorer.id, homeScorer],
+        [awayScorer.id, awayScorer]
+      ])
+    );
+
+    expect(score.scorerBonus).toBe(8);
+    expect(score.total).toBe(9);
   });
 });
