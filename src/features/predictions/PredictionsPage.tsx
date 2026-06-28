@@ -5,9 +5,9 @@ import { Button } from "@/components/ui/Button";
 import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
 import { useActiveParticipantStore } from "@/features/family-users/activeParticipantStore";
 import { listMatches } from "@/infrastructure/repositories/matchesRepository";
-import { listPlayersByIds, listPlayersByTeamId } from "@/infrastructure/repositories/playersRepository";
+import { listPlayersByTeamIds } from "@/infrastructure/repositories/playersRepository";
 import { listPredictionsByParticipant, savePrediction, StoredPrediction } from "@/infrastructure/repositories/predictionsRepository";
-import { Match, Team } from "@/shared/types/worldcup";
+import { Match, Player, Team } from "@/shared/types/worldcup";
 
 type PredictionDraft = {
   homeScore: string;
@@ -17,15 +17,21 @@ type PredictionDraft = {
 };
 
 function canHaveRoster(team: Team) {
-  return team.id !== "pending" && !team.id.startsWith("W") && !team.id.startsWith("L") && !/^\d/.test(team.id);
+  return team.id !== "pending" && !/^[WL]\d+$/.test(team.id) && !/^[12][A-L]$/.test(team.id) && !/^3[A-L]+$/.test(team.id);
 }
 
 function PredictionCard({
   match,
+  players,
+  isLoadingPlayers,
+  playersError,
   participantId,
   storedPrediction
 }: {
   match: Match;
+  players: Player[];
+  isLoadingPlayers: boolean;
+  playersError: unknown;
   participantId?: string;
   storedPrediction?: StoredPrediction;
 }) {
@@ -33,47 +39,15 @@ function PredictionCard({
   const isLocked = new Date(match.kickoffAt).getTime() <= Date.now();
   const homeCanHaveRoster = canHaveRoster(match.homeTeam);
   const awayCanHaveRoster = canHaveRoster(match.awayTeam);
-  const {
-    data: loadedHomePlayers = [],
-    error: homePlayersError,
-    isLoading: isLoadingHomePlayers
-  } = useQuery({
-    queryKey: ["players-by-team", match.homeTeam.id],
-    queryFn: () => listPlayersByTeamId(match.homeTeam.id),
-    enabled: homeCanHaveRoster
-  });
-  const {
-    data: loadedAwayPlayers = [],
-    error: awayPlayersError,
-    isLoading: isLoadingAwayPlayers
-  } = useQuery({
-    queryKey: ["players-by-team", match.awayTeam.id],
-    queryFn: () => listPlayersByTeamId(match.awayTeam.id),
-    enabled: awayCanHaveRoster
-  });
-  const storedScorerIds = useMemo(
-    () => [storedPrediction?.homeScorerId, storedPrediction?.awayScorerId].filter(Boolean) as string[],
-    [storedPrediction?.awayScorerId, storedPrediction?.homeScorerId]
-  );
-  const { data: storedScorers = [] } = useQuery({
-    queryKey: ["stored-scorer-players", match.id, storedScorerIds.join(",")],
-    queryFn: () => listPlayersByIds(storedScorerIds),
-    enabled: storedScorerIds.length > 0
-  });
   const homePlayers = useMemo(
-    () => [...loadedHomePlayers, ...storedScorers.filter((player) => player.teamId === match.homeTeam.id)].filter(
-      (player, index, array) => array.findIndex((item) => item.id === player.id) === index
-    ),
-    [loadedHomePlayers, match.homeTeam.id, storedScorers]
+    () => players.filter((player) => player.teamId === match.homeTeam.id),
+    [match.homeTeam.id, players]
   );
   const awayPlayers = useMemo(
-    () => [...loadedAwayPlayers, ...storedScorers.filter((player) => player.teamId === match.awayTeam.id)].filter(
-      (player, index, array) => array.findIndex((item) => item.id === player.id) === index
-    ),
-    [loadedAwayPlayers, match.awayTeam.id, storedScorers]
+    () => players.filter((player) => player.teamId === match.awayTeam.id),
+    [match.awayTeam.id, players]
   );
   const allMatchPlayers = useMemo(() => [...homePlayers, ...awayPlayers], [awayPlayers, homePlayers]);
-  const isLoadingPlayers = isLoadingHomePlayers || isLoadingAwayPlayers;
   const [draft, setDraft] = useState<PredictionDraft>({
     homeScore: "0",
     awayScore: "0",
@@ -153,8 +127,8 @@ function PredictionCard({
               ))}
             </select>
             {draft.homeScorerId ? <small className="field-note">Guardado: {selectedHomeScorer?.fullName ?? "jugador seleccionado"}</small> : null}
-            {homePlayersError ? <small className="form-error">No pude cargar jugadores de {match.homeTeam.code}.</small> : null}
-            {!isLoadingHomePlayers && homeCanHaveRoster && !homePlayersError && homePlayers.length === 0 ? (
+            {playersError ? <small className="form-error">No pude cargar jugadores de {match.homeTeam.code}.</small> : null}
+            {!isLoadingPlayers && homeCanHaveRoster && !playersError && homePlayers.length === 0 ? (
               <small className="field-note">No hay jugadores cargados para {match.homeTeam.code}.</small>
             ) : null}
           </label>
@@ -172,8 +146,8 @@ function PredictionCard({
               ))}
             </select>
             {draft.awayScorerId ? <small className="field-note">Guardado: {selectedAwayScorer?.fullName ?? "jugador seleccionado"}</small> : null}
-            {awayPlayersError ? <small className="form-error">No pude cargar jugadores de {match.awayTeam.code}.</small> : null}
-            {!isLoadingAwayPlayers && awayCanHaveRoster && !awayPlayersError && awayPlayers.length === 0 ? (
+            {playersError ? <small className="form-error">No pude cargar jugadores de {match.awayTeam.code}.</small> : null}
+            {!isLoadingPlayers && awayCanHaveRoster && !playersError && awayPlayers.length === 0 ? (
               <small className="field-note">No hay jugadores cargados para {match.awayTeam.code}.</small>
             ) : null}
           </label>
@@ -197,11 +171,30 @@ export function PredictionsPage() {
     queryFn: () => listMatches({ limit: 104, showAll: true })
   });
   const upcomingMatches = useMemo(() => {
-    if (showAll) return allMatches;
-
     const futureMatches = allMatches.filter((match) => new Date(match.kickoffAt).getTime() >= Date.now());
-    return futureMatches.slice(0, 12);
+    return showAll ? futureMatches : futureMatches.slice(0, 12);
   }, [allMatches, showAll]);
+  const visibleTeamIds = useMemo(
+    () => [...new Set(
+      upcomingMatches
+        .flatMap((match) => [match.homeTeam, match.awayTeam])
+        .filter(canHaveRoster)
+        .map((team) => team.id)
+    )].sort(),
+    [upcomingMatches]
+  );
+  const visibleTeamKey = visibleTeamIds.join(",");
+  const {
+    data: visiblePlayers = [],
+    error: visiblePlayersError,
+    isLoading: isLoadingVisiblePlayers
+  } = useQuery({
+    queryKey: ["players-by-visible-teams", visibleTeamKey],
+    queryFn: () => listPlayersByTeamIds(visibleTeamIds),
+    enabled: visibleTeamIds.length > 0,
+    staleTime: Infinity,
+    gcTime: 30 * 60 * 1000
+  });
   const { data: storedPredictions = {} } = useQuery({
     queryKey: ["stored-predictions", activeParticipant?.id],
     queryFn: () => listPredictionsByParticipant(activeParticipant?.id),
@@ -225,6 +218,9 @@ export function PredictionsPage() {
         <PredictionCard
           key={match.id}
           match={match}
+          players={visiblePlayers}
+          isLoadingPlayers={isLoadingVisiblePlayers}
+          playersError={visiblePlayersError}
           participantId={activeParticipant?.id}
           storedPrediction={storedPredictions[match.id]}
         />

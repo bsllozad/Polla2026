@@ -21,7 +21,7 @@ const kickoffFormatter = new Intl.DateTimeFormat("en-US", {
 });
 
 function isPendingTeam(team: Team) {
-  return team.id === "pending" || team.id.startsWith("W") || team.id.startsWith("L") || /^\d/.test(team.id);
+  return team.id === "pending" || /^[WL]\d+$/.test(team.id) || /^[12][A-L]$/.test(team.id) || /^3[A-L]+$/.test(team.id);
 }
 
 function matchByNo(matches: Match[], matchNo: number) {
