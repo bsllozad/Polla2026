@@ -11,6 +11,7 @@ type TeamRow = {
 
 type MatchRow = {
   id: string;
+  fifa_match_no: number | null;
   stage: MatchStage;
   kickoff_at: string;
   venue: string | null;
@@ -51,6 +52,7 @@ export async function listMatches({ limit = 8, showAll = false }: { limit?: numb
     .from("matches")
     .select(`
       id,
+      fifa_match_no,
       stage,
       kickoff_at,
       venue,
@@ -74,11 +76,14 @@ export async function listMatches({ limit = 8, showAll = false }: { limit?: numb
 
   return ((data ?? []) as unknown as MatchRow[]).map((row) => ({
     id: row.id,
+    fifaMatchNo: row.fifa_match_no ?? undefined,
     stage: row.stage,
     kickoffAt: row.kickoff_at,
     venue: row.venue ?? undefined,
     status: row.status,
     homeTeam: toTeam(row.home_team, row.home_slot),
-    awayTeam: toTeam(row.away_team, row.away_slot)
+    awayTeam: toTeam(row.away_team, row.away_slot),
+    homeSlot: row.home_slot ?? undefined,
+    awaySlot: row.away_slot ?? undefined
   }));
 }

@@ -15,8 +15,10 @@ const navItems = [
   { to: "/colombia", label: "Polla Colombia", icon: ShieldCheck },
   { to: "/puntos-colombia", label: "Puntos Colombia", icon: ListChecks },
   { to: "/resultados-colombia", label: "Resultados Colombia", icon: ShieldCheck },
+  { to: "/admin-cruces", label: "Admin cruces", icon: ListChecks, adminOnly: true },
   { to: "/resultados", label: "Resultados", icon: ClipboardCheck, adminOnly: true },
-  { to: "/usuarios", label: "Usuarios", icon: UsersRound, adminOnly: true }
+  { to: "/usuarios", label: "Usuarios", icon: UsersRound, adminOnly: true },
+  { to: "/torneo", label: "Cruces", icon: Trophy }
 ];
 
 export function AppLayout() {

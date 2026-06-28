@@ -1,4 +1,5 @@
 import { supabase } from "@/infrastructure/supabase/client";
+import { advanceKnockoutSlots } from "@/infrastructure/repositories/bracketRepository";
 
 export type GoalInput = {
   teamId: string;
@@ -45,6 +46,7 @@ export async function getMatchResult(matchId?: string): Promise<StoredMatchResul
     .maybeSingle();
 
   if (resultError) throw resultError;
+
   if (!result) return null;
 
   const { data: goals, error: goalsError } = await supabase
@@ -84,8 +86,17 @@ export async function saveMatchResult(input: MatchResultInput): Promise<void> {
 
   if (resultError) throw resultError;
 
+  const { error: matchStatusError } = await supabase
+    .from("matches")
+    .update({ status: input.status })
+    .eq("id", input.matchId);
+
+  if (matchStatusError) throw matchStatusError;
+
   const { error: deleteError } = await supabase.from("goals").delete().eq("match_id", input.matchId);
   if (deleteError) throw deleteError;
+
+  await advanceKnockoutSlots(input.matchId, input.status, input.homeScore, input.awayScore);
 
   const validGoals = input.goals.filter((goal) => goal.playerId || goal.ownGoalPlayerId);
   if (input.status === "invalid" || validGoals.length === 0) return;

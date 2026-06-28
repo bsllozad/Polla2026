@@ -96,7 +96,11 @@ export function AdminResultsPage() {
     queryKey: ["admin-result-matches", showAll],
     queryFn: () => listMatches({ limit: 104, showAll })
   });
-  const match = matches.find((item) => item.id === selectedMatchId) ?? matches[0];
+  const orderedMatches = useMemo(
+    () => [...matches].sort((left, right) => new Date(right.kickoffAt).getTime() - new Date(left.kickoffAt).getTime()),
+    [matches]
+  );
+  const match = orderedMatches.find((item) => item.id === selectedMatchId) ?? orderedMatches[0];
   const { data: storedResult } = useQuery({
     queryKey: ["match-result", match?.id],
     queryFn: () => getMatchResult(match?.id),
@@ -127,6 +131,9 @@ export function AdminResultsPage() {
       queryClient.invalidateQueries({ queryKey: ["match-standings"] });
       queryClient.invalidateQueries({ queryKey: ["colombia-standings"] });
       queryClient.invalidateQueries({ queryKey: ["world-cup-top-scorers"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-bracket-matches"] });
+      queryClient.invalidateQueries({ queryKey: ["tournament-bracket"] });
+      queryClient.invalidateQueries({ queryKey: ["prediction-matches"] });
     }
   });
 
@@ -154,6 +161,19 @@ export function AdminResultsPage() {
     }, {});
     setGoalCounters(nextCounters);
   }, [storedResult, match?.id]);
+
+  useEffect(() => {
+    if (orderedMatches.length === 0 || orderedMatches.some((item) => item.id === selectedMatchId)) return;
+
+    const now = Date.now();
+    const pastPending = orderedMatches.find((item) => new Date(item.kickoffAt).getTime() <= now && item.status !== "finished" && item.status !== "invalid");
+    const nextMatch = [...orderedMatches]
+      .reverse()
+      .find((item) => new Date(item.kickoffAt).getTime() > now && item.status !== "finished" && item.status !== "invalid");
+    const lastFinished = orderedMatches.find((item) => item.status === "finished");
+
+    setSelectedMatchId((pastPending ?? nextMatch ?? lastFinished ?? orderedMatches[0]).id);
+  }, [orderedMatches, selectedMatchId]);
 
   const counters = useMemo(() => {
     if (!match) return [];
@@ -228,7 +248,7 @@ export function AdminResultsPage() {
         <CardHeader>
           <CardTitle>Partido</CardTitle>
           <select value={match.id} onChange={(event) => resetForMatch(event.target.value)}>
-            {matches.map((item) => (
+            {orderedMatches.map((item) => (
               <option key={item.id} value={item.id}>
                 {item.homeTeam.code} vs {item.awayTeam.code} · {new Date(item.kickoffAt).toLocaleDateString()}
               </option>

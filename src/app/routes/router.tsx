@@ -1,6 +1,7 @@
 import { createBrowserRouter, Navigate } from "react-router-dom";
 import { AppLayout } from "@/app/layout/AppLayout";
 import { AdminColombiaResultsPage } from "@/features/admin-colombia-results/AdminColombiaResultsPage";
+import { AdminBracketPage } from "@/features/admin-bracket/AdminBracketPage";
 import { AdminResultsPage } from "@/features/admin-results/AdminResultsPage";
 import { AdminRoute } from "@/features/auth/AdminRoute";
 import { AuthGuard } from "@/features/auth/AuthGuard";
@@ -38,6 +39,7 @@ export const router = createBrowserRouter([
             children: [
               { path: "resultados", element: <AdminResultsPage /> },
               { path: "admin-resultados", element: <AdminResultsPage /> },
+              { path: "admin-cruces", element: <AdminBracketPage /> },
               { path: "usuarios", element: <FamilyUsersPage /> }
             ]
           }

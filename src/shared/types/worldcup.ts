@@ -26,10 +26,13 @@ export type MatchStatus = "scheduled" | "live" | "finished" | "invalid";
 
 export type Match = {
   id: MatchId;
+  fifaMatchNo?: number;
   stage: MatchStage;
   kickoffAt: string;
   homeTeam: Team;
   awayTeam: Team;
+  homeSlot?: string;
+  awaySlot?: string;
   venue?: string;
   status: MatchStatus;
 };
