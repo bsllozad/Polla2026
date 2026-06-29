@@ -34,8 +34,9 @@ Ejecutar en este orden:
 3. `supabase/seed/002_teams.sql`
 4. `supabase/seed/003_group_matches.sql`
 5. `supabase/seed/004_knockout_slots.sql` para crear los slots editables de eliminatorias.
-6. `supabase/seed/006_players_fifa_squadlists.sql`
-7. `supabase/seed/007_initial_participants.sql` y luego editar/agregar participantes desde la app.
-8. `supabase/seed/008_grants.sql`
+6. `supabase/seed/009_fix_knockout_slots.sql`, `supabase/seed/010_set_real_round32_bracket.sql` y `supabase/seed/011_fix_round32_june29_schedule.sql` para dejar los 16avos reales actualizados.
+7. `supabase/seed/006_players_fifa_squadlists.sql`
+8. `supabase/seed/007_initial_participants.sql` y luego editar/agregar participantes desde la app.
+9. `supabase/seed/008_grants.sql`
 
 El seed de jugadores fue generado desde el PDF oficial FIFA indicado en `source_url`. El PDF usa `MC` para todos los mediocampistas; esos jugadores quedan como `attacking_midfielder` y se pueden ajustar manualmente en la app cuando queramos diferenciar volante de marca y volante ofensivo.

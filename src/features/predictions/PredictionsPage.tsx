@@ -209,8 +209,10 @@ export function PredictionsPage() {
     queryFn: () => listMatches({ limit: 104, showAll: true })
   });
   const upcomingMatches = useMemo(() => {
-    const futureMatches = allMatches.filter((match) => new Date(match.kickoffAt).getTime() >= Date.now());
-    return showAll ? futureMatches : futureMatches.slice(0, 12);
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+    const availableMatches = allMatches.filter((match) => new Date(match.kickoffAt).getTime() >= startOfToday.getTime());
+    return showAll ? availableMatches : availableMatches.slice(0, 12);
   }, [allMatches, showAll]);
   const visibleTeamIds = useMemo(
     () => [...new Set(

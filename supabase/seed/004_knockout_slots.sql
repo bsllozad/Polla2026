@@ -5,11 +5,11 @@
 with fixture(fifa_match_no, stage, kickoff_at, venue, home_slot, away_slot) as (
   values
     (73, 'round_32', '2026-06-28 19:00:00+00'::timestamptz, 'SoFi Stadium, Inglewood', '2A', '2B'),
-    (74, 'round_32', '2026-06-29 17:00:00+00'::timestamptz, 'NRG Stadium, Houston', '1E', '3ABCDF'),
-    (75, 'round_32', '2026-06-29 20:30:00+00'::timestamptz, 'Gillette Stadium, Foxborough', '1F', '2C'),
-    (76, 'round_32', '2026-06-30 01:00:00+00'::timestamptz, 'Estadio BBVA, Guadalupe', '1C', '2F'),
-    (77, 'round_32', '2026-06-30 17:00:00+00'::timestamptz, 'AT&T Stadium, Arlington', '1I', '3CDFGH'),
-    (78, 'round_32', '2026-06-30 21:00:00+00'::timestamptz, 'MetLife Stadium, East Rutherford', '2E', '2I'),
+    (74, 'round_32', '2026-06-29 17:00:00+00'::timestamptz, 'NRG Stadium, Houston', '1C', '2F'),
+    (75, 'round_32', '2026-06-29 20:30:00+00'::timestamptz, 'Gillette Stadium, Foxborough', '1E', '3ABCDF'),
+    (76, 'round_32', '2026-06-30 01:00:00+00'::timestamptz, 'Estadio BBVA, Guadalupe', '1F', '2C'),
+    (77, 'round_32', '2026-06-30 21:00:00+00'::timestamptz, 'MetLife Stadium, East Rutherford', '1I', '3CDFGH'),
+    (78, 'round_32', '2026-06-30 17:00:00+00'::timestamptz, 'AT&T Stadium, Arlington', '2E', '2I'),
     (79, 'round_32', '2026-07-01 01:00:00+00'::timestamptz, 'Estadio Azteca, Mexico City', '1A', '3CEFHI'),
     (80, 'round_32', '2026-07-01 16:00:00+00'::timestamptz, 'Mercedes-Benz Stadium, Atlanta', '1L', '3EHIJK'),
     (81, 'round_32', '2026-07-01 20:00:00+00'::timestamptz, 'Lumen Field, Seattle', '1D', '3BEFIJ'),
