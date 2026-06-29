@@ -2,6 +2,7 @@ import { MatchResult, Player, Prediction } from "@/shared/types/worldcup";
 
 export type ScoreBreakdown = {
   matchPoints: number;
+  penaltyBonus: number;
   scorerBonus: number;
   total: number;
   label: string;
@@ -51,17 +52,26 @@ export function calculateScorerBonus(prediction: Prediction, result: MatchResult
   }, 0);
 }
 
+export function calculatePenaltyBonus(prediction: Prediction, result: MatchResult): number {
+  if (result.status === "invalid") return 0;
+  if (prediction.homeScore !== prediction.awayScore || result.homeScore !== result.awayScore) return 0;
+  if (!prediction.penaltyWinnerTeamId || !result.penaltyWinnerTeamId) return 0;
+  return prediction.penaltyWinnerTeamId === result.penaltyWinnerTeamId ? 2 : 0;
+}
+
 export function calculatePredictionScore(
   prediction: Prediction,
   result: MatchResult,
   playersById: Map<string, Player>
 ): ScoreBreakdown {
   const matchPoints = calculateMatchPoints(prediction, result);
+  const penaltyBonus = calculatePenaltyBonus(prediction, result);
   const scorerBonus = calculateScorerBonus(prediction, result, playersById);
   return {
     matchPoints,
+    penaltyBonus,
     scorerBonus,
-    total: matchPoints + scorerBonus,
+    total: matchPoints + penaltyBonus + scorerBonus,
     label: result.status === "invalid" ? "Partido invalidado" : "Puntaje calculado"
   };
 }

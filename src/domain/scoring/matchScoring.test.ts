@@ -41,6 +41,28 @@ describe("calculateMatchPoints", () => {
 });
 
 describe("calculatePredictionScore", () => {
+  it("adds 2 points when penalty winner matches after a draw prediction", () => {
+    const score = calculatePredictionScore(
+      { ...basePrediction, homeScore: 1, awayScore: 1, penaltyWinnerTeamId: "home" },
+      { ...result(2, 2), penaltyWinnerTeamId: "home" },
+      new Map()
+    );
+
+    expect(score.matchPoints).toBe(3);
+    expect(score.penaltyBonus).toBe(2);
+    expect(score.total).toBe(5);
+  });
+
+  it("does not add penalty bonus when regular-time scores are not both draws", () => {
+    const score = calculatePredictionScore(
+      { ...basePrediction, homeScore: 2, awayScore: 1, penaltyWinnerTeamId: "home" },
+      { ...result(2, 2), penaltyWinnerTeamId: "home" },
+      new Map()
+    );
+
+    expect(score.penaltyBonus).toBe(0);
+  });
+
   it("adds bonuses for selected scorers from both teams", () => {
     const homeScorer: Player = {
       id: "home-scorer",

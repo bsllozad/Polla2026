@@ -9,6 +9,7 @@ type PredictionRow = {
   match_id: string;
   home_score: number;
   away_score: number;
+  penalty_winner_team_id: string | null;
   home_scorer_id: string | null;
   away_scorer_id: string | null;
   created_at: string;
@@ -18,6 +19,7 @@ type ResultRow = {
   match_id: string;
   home_score: number | null;
   away_score: number | null;
+  penalty_winner_team_id: string | null;
   status: "finished" | "invalid";
 };
 
@@ -33,6 +35,7 @@ export type MatchPointDetail = {
   result: MatchResult;
   points: {
     matchPoints: number;
+    penaltyBonus: number;
     scorerBonus: number;
     total: number;
   };
@@ -58,7 +61,14 @@ function resultLabel(value: number) {
   return value > 0 ? "gana local" : "gana visitante";
 }
 
-function buildReasons(prediction: Prediction | undefined, result: MatchResult, playersById: Map<string, Player>) {
+function teamLabel(teamId: string | undefined, match: Match) {
+  if (!teamId) return "sin seleccion";
+  if (teamId === match.homeTeam.id) return match.homeTeam.name;
+  if (teamId === match.awayTeam.id) return match.awayTeam.name;
+  return "equipo guardado";
+}
+
+function buildReasons(prediction: Prediction | undefined, result: MatchResult, playersById: Map<string, Player>, match: Match) {
   if (!prediction) return ["No hay apuesta guardada para este partido."];
   if (result.status === "invalid") return ["Partido invalidado por el admin: no suma puntos."];
 
@@ -78,6 +88,18 @@ function buildReasons(prediction: Prediction | undefined, result: MatchResult, p
   } else {
     const totalDistance = Math.abs(prediction.homeScore - result.homeScore) + Math.abs(prediction.awayScore - result.awayScore);
     reasons.push(totalDistance === 1 ? "Ganador acertado y marcador cerca: 3 puntos." : "Ganador acertado: 1 punto.");
+  }
+
+  if (prediction.homeScore === prediction.awayScore) {
+    if (!prediction.penaltyWinnerTeamId) {
+      reasons.push("No pusiste ganador por penales.");
+    } else if (!result.penaltyWinnerTeamId) {
+      reasons.push(`Pusiste a ganar en penales a ${teamLabel(prediction.penaltyWinnerTeamId, match)}, pero el admin no registro penales.`);
+    } else if (prediction.penaltyWinnerTeamId === result.penaltyWinnerTeamId) {
+      reasons.push(`Pusiste a ganar en penales a ${teamLabel(prediction.penaltyWinnerTeamId, match)} y gano: +2 puntos.`);
+    } else {
+      reasons.push(`Pusiste a ganar en penales a ${teamLabel(prediction.penaltyWinnerTeamId, match)} y gano ${teamLabel(result.penaltyWinnerTeamId, match)}.`);
+    }
   }
 
   const selectedScorerIds = [prediction.homeScorerId, prediction.awayScorerId].filter(Boolean) as string[];
@@ -105,9 +127,9 @@ export async function listMatchPointDetails(participantId?: string): Promise<Mat
     await Promise.all([
       supabase
         .from("predictions")
-        .select("participant_id, match_id, home_score, away_score, home_scorer_id, away_scorer_id, created_at")
+        .select("participant_id, match_id, home_score, away_score, penalty_winner_team_id, home_scorer_id, away_scorer_id, created_at")
         .eq("participant_id", participantId),
-      supabase.from("match_results").select("match_id, home_score, away_score, status"),
+      supabase.from("match_results").select("match_id, home_score, away_score, penalty_winner_team_id, status"),
       supabase.from("goals").select("match_id, player_id, own_goal_player_id")
     ]);
 
@@ -129,6 +151,7 @@ export async function listMatchPointDetails(participantId?: string): Promise<Mat
         matchId: prediction.match_id,
         homeScore: prediction.home_score,
         awayScore: prediction.away_score,
+        penaltyWinnerTeamId: prediction.penalty_winner_team_id ?? undefined,
         homeScorerId: prediction.home_scorer_id ?? undefined,
         awayScorerId: prediction.away_scorer_id ?? undefined,
         createdAt: prediction.created_at
@@ -148,6 +171,7 @@ export async function listMatchPointDetails(participantId?: string): Promise<Mat
         matchId: result.match_id,
         homeScore: result.home_score ?? 0,
         awayScore: result.away_score ?? 0,
+        penaltyWinnerTeamId: result.penalty_winner_team_id ?? undefined,
         scorerIds: goalsByMatch[result.match_id] ?? [],
         status: result.status
       }
@@ -160,7 +184,7 @@ export async function listMatchPointDetails(participantId?: string): Promise<Mat
       if (!result) return null;
 
       const prediction = predictionsByMatch.get(match.id);
-      const score = prediction ? calculatePredictionScore(prediction, result, playersById) : { matchPoints: 0, scorerBonus: 0, total: 0 };
+      const score = prediction ? calculatePredictionScore(prediction, result, playersById) : { matchPoints: 0, penaltyBonus: 0, scorerBonus: 0, total: 0 };
       const selectedScorers = prediction
         ? ([prediction.homeScorerId, prediction.awayScorerId].filter(Boolean) as string[])
             .map((playerId) => playersById.get(playerId))
@@ -174,12 +198,13 @@ export async function listMatchPointDetails(participantId?: string): Promise<Mat
         result,
         points: {
           matchPoints: score.matchPoints,
+          penaltyBonus: score.penaltyBonus,
           scorerBonus: score.scorerBonus,
           total: score.total
         },
         selectedScorers,
         realScorers,
-        reasons: buildReasons(prediction, result, playersById)
+        reasons: buildReasons(prediction, result, playersById, match)
       };
     })
     .filter((detail): detail is MatchPointDetail => detail !== null)

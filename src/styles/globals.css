@@ -352,6 +352,43 @@ label input {
   gap: 0.75rem;
 }
 
+.penalty-choice {
+  display: grid;
+  gap: 0.5rem;
+  min-width: 0;
+  margin: 0;
+  border: 1px solid #edf0e6;
+  border-radius: 8px;
+  padding: 0.75rem;
+}
+
+.penalty-choice legend {
+  padding: 0 0.25rem;
+  color: #3d4852;
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.penalty-choice label {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.penalty-choice input {
+  width: auto;
+}
+
+.penalty-choice small {
+  color: #6b7280;
+  font-weight: 650;
+}
+
+.penalty-choice:disabled {
+  background: #f8f9f5;
+  color: #8a939b;
+}
+
 .readonly-prediction-grid {
   margin-bottom: 1rem;
 }
@@ -416,7 +453,7 @@ label input {
 
 .points-breakdown {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0.75rem;
   margin-bottom: 1rem;
 }

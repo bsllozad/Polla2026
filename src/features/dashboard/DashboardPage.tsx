@@ -1,4 +1,4 @@
-import { Award, Clock, Goal, ListChecks, MapPin, TrendingUp } from "lucide-react";
+import { Award, Clock, Goal, ListChecks, MapPin, TrendingUp, Trophy } from "lucide-react";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/Button";
@@ -94,6 +94,13 @@ export function DashboardPage() {
             <div>
               <strong>Goleador acertado</strong>
               <span>Forward 3, volante ofensivo 5, volante marca 10, defensa 15, arquero 20.</span>
+            </div>
+          </article>
+          <article>
+            <Trophy size={20} />
+            <div>
+              <strong>Penales</strong>
+              <span>2 pts extra si en eliminacion apuestas empate y aciertas quien gana por penales.</span>
             </div>
           </article>
         </div>

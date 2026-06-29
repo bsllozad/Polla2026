@@ -42,6 +42,7 @@ export type Prediction = {
   matchId: MatchId;
   homeScore: number;
   awayScore: number;
+  penaltyWinnerTeamId?: TeamId;
   homeScorerId?: string;
   awayScorerId?: string;
   createdAt: string;
@@ -51,6 +52,7 @@ export type MatchResult = {
   matchId: MatchId;
   homeScore: number;
   awayScore: number;
+  penaltyWinnerTeamId?: TeamId;
   scorerIds: string[];
   status: "finished" | "invalid";
 };

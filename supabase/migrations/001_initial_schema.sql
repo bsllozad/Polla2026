@@ -63,6 +63,7 @@ create table predictions (
   match_id uuid not null references matches(id) on delete cascade,
   home_score integer not null check (home_score >= 0),
   away_score integer not null check (away_score >= 0),
+  penalty_winner_team_id uuid references teams(id),
   home_scorer_id uuid references players(id),
   away_scorer_id uuid references players(id),
   created_at timestamptz not null default now(),
@@ -74,6 +75,7 @@ create table match_results (
   match_id uuid primary key references matches(id) on delete cascade,
   home_score integer check (home_score >= 0),
   away_score integer check (away_score >= 0),
+  penalty_winner_team_id uuid references teams(id),
   status match_status not null default 'finished',
   updated_by uuid references profiles(id),
   updated_at timestamptz not null default now()

@@ -1,4 +1,4 @@
-import { Award, CalendarClock, Goal, ListChecks } from "lucide-react";
+import { Award, CalendarClock, Goal, ListChecks, Trophy } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -22,10 +22,19 @@ function PlayerList({ players, emptyLabel }: { players: { id: string; fullName: 
   );
 }
 
+function teamName(teamId: string | undefined, detail: MatchPointDetail, emptyLabel: string) {
+  if (!teamId) return emptyLabel;
+  if (teamId === detail.match.homeTeam.id) return detail.match.homeTeam.name;
+  if (teamId === detail.match.awayTeam.id) return detail.match.awayTeam.name;
+  return "Equipo guardado";
+}
+
 function MatchPointCard({ detail }: { detail: MatchPointDetail }) {
   const { match, prediction, result, points } = detail;
   const predictionLabel = prediction ? `${prediction.homeScore} - ${prediction.awayScore}` : "Sin apuesta";
   const resultLabel = result.status === "invalid" ? "Invalidado" : `${result.homeScore} - ${result.awayScore}`;
+  const predictionPenaltyLabel = teamName(prediction?.penaltyWinnerTeamId, detail, "Sin seleccion");
+  const resultPenaltyLabel = teamName(result.penaltyWinnerTeamId, detail, "Sin penales");
 
   return (
     <Card>
@@ -49,6 +58,14 @@ function MatchPointCard({ detail }: { detail: MatchPointDetail }) {
           <strong>{resultLabel}</strong>
         </div>
         <div className="readonly-field">
+          <span>Penales apostados</span>
+          <strong>{predictionPenaltyLabel}</strong>
+        </div>
+        <div className="readonly-field">
+          <span>Penales reales</span>
+          <strong>{resultPenaltyLabel}</strong>
+        </div>
+        <div className="readonly-field">
           <span>Goleadores apostados</span>
           <PlayerList players={detail.selectedScorers} emptyLabel="Sin goleadores" />
         </div>
@@ -68,6 +85,11 @@ function MatchPointCard({ detail }: { detail: MatchPointDetail }) {
           <Goal size={18} />
           <span>Goleadores</span>
           <strong>{points.scorerBonus} pts</strong>
+        </div>
+        <div>
+          <Trophy size={18} />
+          <span>Penales</span>
+          <strong>{points.penaltyBonus} pts</strong>
         </div>
         <div>
           <ListChecks size={18} />

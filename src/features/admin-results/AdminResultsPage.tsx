@@ -91,6 +91,7 @@ export function AdminResultsPage() {
   const [showAll, setShowAll] = useState(false);
   const [homeScore, setHomeScore] = useState(0);
   const [awayScore, setAwayScore] = useState(0);
+  const [penaltyWinnerTeamId, setPenaltyWinnerTeamId] = useState("");
   const [goalCounters, setGoalCounters] = useState<Record<string, GoalCounter>>({});
   const { data: matches = [] } = useQuery({
     queryKey: ["admin-result-matches", showAll],
@@ -117,6 +118,7 @@ export function AdminResultsPage() {
         matchId: match?.id ?? "",
         homeScore,
         awayScore,
+        penaltyWinnerTeamId: homeScore === awayScore ? penaltyWinnerTeamId || undefined : undefined,
         status,
         goals: Object.values(goalCounters).flatMap((counter) =>
           Array.from({ length: counter.count }, () => ({
@@ -141,12 +143,14 @@ export function AdminResultsPage() {
     if (!storedResult || !match) {
       setHomeScore(0);
       setAwayScore(0);
+      setPenaltyWinnerTeamId("");
       setGoalCounters({});
       return;
     }
 
     setHomeScore(storedResult.homeScore);
     setAwayScore(storedResult.awayScore);
+    setPenaltyWinnerTeamId(storedResult.penaltyWinnerTeamId ?? "");
     const nextCounters = storedResult.goals.reduce<Record<string, GoalCounter>>((acc, goal) => {
       const key = goal.playerId ?? `${goal.teamId}:own-goal`;
       const existing = acc[key];
@@ -204,6 +208,7 @@ export function AdminResultsPage() {
     setSelectedMatchId(matchId);
     setHomeScore(0);
     setAwayScore(0);
+    setPenaltyWinnerTeamId("");
     setGoalCounters({});
   }
 
@@ -234,6 +239,8 @@ export function AdminResultsPage() {
   const awayPlayers = orderedTeamPlayers(players, match.awayTeam.id);
   const homeCounters = counters.filter((counter) => counter.teamId === match.homeTeam.id);
   const awayCounters = counters.filter((counter) => counter.teamId === match.awayTeam.id);
+  const canHavePenalties = match.stage !== "group" && homeScore === awayScore;
+  const needsPenaltyWinner = canHavePenalties && !penaltyWinnerTeamId;
 
   return (
     <div className="stack">
@@ -260,6 +267,31 @@ export function AdminResultsPage() {
           <ScoreBox team={match.homeTeam} score={homeScore} onMinus={() => setHomeScore((value) => Math.max(0, value - 1))} onPlus={() => setHomeScore((value) => value + 1)} />
           <ScoreBox team={match.awayTeam} score={awayScore} onMinus={() => setAwayScore((value) => Math.max(0, value - 1))} onPlus={() => setAwayScore((value) => value + 1)} />
         </div>
+        <fieldset className="penalty-choice" disabled={!canHavePenalties}>
+          <legend>Ganador por penales</legend>
+          <label>
+            <input
+              type="radio"
+              name="admin-penalty-winner"
+              value={match.homeTeam.id}
+              checked={canHavePenalties && penaltyWinnerTeamId === match.homeTeam.id}
+              onChange={(event) => setPenaltyWinnerTeamId(event.target.value)}
+            />
+            {match.homeTeam.flagEmoji} {match.homeTeam.name}
+          </label>
+          <label>
+            <input
+              type="radio"
+              name="admin-penalty-winner"
+              value={match.awayTeam.id}
+              checked={canHavePenalties && penaltyWinnerTeamId === match.awayTeam.id}
+              onChange={(event) => setPenaltyWinnerTeamId(event.target.value)}
+            />
+            {match.awayTeam.flagEmoji} {match.awayTeam.name}
+          </label>
+          {!canHavePenalties ? <small>Disponible solo en eliminacion cuando el marcador queda empatado.</small> : null}
+          {needsPenaltyWinner ? <small className="form-error">Elige quien gano por penales para guardar este empate.</small> : null}
+        </fieldset>
         <div className="goal-columns">
           <PlayerGoalColumn title={`${match.homeTeam.code} goleadores`} players={homePlayers} counters={homeCounters} onIncrement={(counter) => updateCounter(counter, 1)} onDecrement={(counter) => updateCounter(counter, -1)} />
           <PlayerGoalColumn title={`${match.awayTeam.code} goleadores`} players={awayPlayers} counters={awayCounters} onIncrement={(counter) => updateCounter(counter, 1)} onDecrement={(counter) => updateCounter(counter, -1)} />
@@ -268,7 +300,7 @@ export function AdminResultsPage() {
         {mutation.isSuccess ? <p className="form-success">Resultado guardado.</p> : null}
         <div className="card-actions split-actions">
           <Button type="button" variant="danger" onClick={() => mutation.mutate("invalid")}><ShieldAlert size={16} /> Invalidar partido</Button>
-          <Button type="button" onClick={() => mutation.mutate("finished")} disabled={mutation.isPending}><Save size={16} /> {mutation.isPending ? "Guardando..." : "Guardar resultado"}</Button>
+          <Button type="button" onClick={() => mutation.mutate("finished")} disabled={mutation.isPending || needsPenaltyWinner}><Save size={16} /> {mutation.isPending ? "Guardando..." : "Guardar resultado"}</Button>
         </div>
       </Card>
     </div>

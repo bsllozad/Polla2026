@@ -5,6 +5,7 @@ export type PredictionInput = {
   matchId: string;
   homeScore: number;
   awayScore: number;
+  penaltyWinnerTeamId?: string;
   homeScorerId?: string;
   awayScorerId?: string;
 };
@@ -16,6 +17,7 @@ type PredictionRow = {
   match_id: string;
   home_score: number;
   away_score: number;
+  penalty_winner_team_id: string | null;
   home_scorer_id: string | null;
   away_scorer_id: string | null;
 };
@@ -25,7 +27,7 @@ export async function listPredictionsByParticipant(participantId?: string): Prom
 
   const { data, error } = await supabase
     .from("predictions")
-    .select("participant_id, match_id, home_score, away_score, home_scorer_id, away_scorer_id")
+    .select("participant_id, match_id, home_score, away_score, penalty_winner_team_id, home_scorer_id, away_scorer_id")
     .eq("participant_id", participantId);
 
   if (error) throw error;
@@ -36,6 +38,7 @@ export async function listPredictionsByParticipant(participantId?: string): Prom
       matchId: row.match_id,
       homeScore: row.home_score,
       awayScore: row.away_score,
+      penaltyWinnerTeamId: row.penalty_winner_team_id ?? undefined,
       homeScorerId: row.home_scorer_id ?? undefined,
       awayScorerId: row.away_scorer_id ?? undefined
     };
@@ -52,6 +55,7 @@ export async function savePrediction(input: PredictionInput): Promise<void> {
       match_id: input.matchId,
       home_score: input.homeScore,
       away_score: input.awayScore,
+      penalty_winner_team_id: input.homeScore === input.awayScore ? input.penaltyWinnerTeamId || null : null,
       home_scorer_id: input.homeScorerId || null,
       away_scorer_id: input.awayScorerId || null,
       updated_at: new Date().toISOString()

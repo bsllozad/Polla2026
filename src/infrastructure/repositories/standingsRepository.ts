@@ -15,6 +15,7 @@ type PredictionRow = {
   match_id: string;
   home_score: number;
   away_score: number;
+  penalty_winner_team_id: string | null;
   home_scorer_id: string | null;
   away_scorer_id: string | null;
   created_at: string;
@@ -24,6 +25,7 @@ type ResultRow = {
   match_id: string;
   home_score: number | null;
   away_score: number | null;
+  penalty_winner_team_id: string | null;
   status: "finished" | "invalid";
 };
 
@@ -94,8 +96,8 @@ export async function listMatchStandings(): Promise<StandingRow[]> {
 
   const [{ data: predictions, error: predictionsError }, { data: results, error: resultsError }, { data: goals, error: goalsError }] =
     await Promise.all([
-      supabase.from("predictions").select("participant_id, match_id, home_score, away_score, home_scorer_id, away_scorer_id, created_at"),
-      supabase.from("match_results").select("match_id, home_score, away_score, status"),
+      supabase.from("predictions").select("participant_id, match_id, home_score, away_score, penalty_winner_team_id, home_scorer_id, away_scorer_id, created_at"),
+      supabase.from("match_results").select("match_id, home_score, away_score, penalty_winner_team_id, status"),
       supabase.from("goals").select("match_id, player_id, own_goal_player_id")
     ]);
 
@@ -122,6 +124,7 @@ export async function listMatchStandings(): Promise<StandingRow[]> {
         matchId: result.match_id,
         homeScore: result.home_score ?? 0,
         awayScore: result.away_score ?? 0,
+        penaltyWinnerTeamId: result.penalty_winner_team_id ?? undefined,
         scorerIds: goalsByMatch[result.match_id] ?? [],
         status: result.status
       }
@@ -138,6 +141,7 @@ export async function listMatchStandings(): Promise<StandingRow[]> {
       matchId: row.match_id,
       homeScore: row.home_score,
       awayScore: row.away_score,
+      penaltyWinnerTeamId: row.penalty_winner_team_id ?? undefined,
       homeScorerId: row.home_scorer_id ?? undefined,
       awayScorerId: row.away_scorer_id ?? undefined,
       createdAt: row.created_at

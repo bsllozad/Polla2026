@@ -11,6 +11,7 @@ export type MatchResultInput = {
   matchId: string;
   homeScore: number;
   awayScore: number;
+  penaltyWinnerTeamId?: string;
   status: "finished" | "invalid";
   goals: GoalInput[];
 };
@@ -19,6 +20,7 @@ export type StoredMatchResult = {
   matchId: string;
   homeScore: number;
   awayScore: number;
+  penaltyWinnerTeamId?: string;
   status: "finished" | "invalid";
   goals: GoalInput[];
 };
@@ -27,6 +29,7 @@ type ResultRow = {
   match_id: string;
   home_score: number | null;
   away_score: number | null;
+  penalty_winner_team_id: string | null;
   status: "finished" | "invalid";
 };
 
@@ -41,7 +44,7 @@ export async function getMatchResult(matchId?: string): Promise<StoredMatchResul
 
   const { data: result, error: resultError } = await supabase
     .from("match_results")
-    .select("match_id, home_score, away_score, status")
+    .select("match_id, home_score, away_score, penalty_winner_team_id, status")
     .eq("match_id", matchId)
     .maybeSingle();
 
@@ -61,6 +64,7 @@ export async function getMatchResult(matchId?: string): Promise<StoredMatchResul
     matchId: row.match_id,
     homeScore: row.home_score ?? 0,
     awayScore: row.away_score ?? 0,
+    penaltyWinnerTeamId: row.penalty_winner_team_id ?? undefined,
     status: row.status,
     goals: ((goals ?? []) as GoalRow[]).map((goal) => ({
       teamId: goal.team_id,
@@ -78,6 +82,7 @@ export async function saveMatchResult(input: MatchResultInput): Promise<void> {
       match_id: input.matchId,
       home_score: input.status === "invalid" ? null : input.homeScore,
       away_score: input.status === "invalid" ? null : input.awayScore,
+      penalty_winner_team_id: input.status === "finished" && input.homeScore === input.awayScore ? input.penaltyWinnerTeamId || null : null,
       status: input.status,
       updated_at: new Date().toISOString()
     },
@@ -96,7 +101,7 @@ export async function saveMatchResult(input: MatchResultInput): Promise<void> {
   const { error: deleteError } = await supabase.from("goals").delete().eq("match_id", input.matchId);
   if (deleteError) throw deleteError;
 
-  await advanceKnockoutSlots(input.matchId, input.status, input.homeScore, input.awayScore);
+  await advanceKnockoutSlots(input.matchId, input.status, input.homeScore, input.awayScore, input.penaltyWinnerTeamId);
 
   const validGoals = input.goals.filter((goal) => goal.playerId || goal.ownGoalPlayerId);
   if (input.status === "invalid" || validGoals.length === 0) return;

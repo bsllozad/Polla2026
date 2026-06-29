@@ -183,8 +183,8 @@ export async function applyRound32Proposal(): Promise<void> {
   }
 }
 
-export async function advanceKnockoutSlots(matchId: string, status: "finished" | "invalid", homeScore: number, awayScore: number): Promise<void> {
-  if (!supabase || status !== "finished" || homeScore === awayScore) return;
+export async function advanceKnockoutSlots(matchId: string, status: "finished" | "invalid", homeScore: number, awayScore: number, penaltyWinnerTeamId?: string): Promise<void> {
+  if (!supabase || status !== "finished") return;
 
   const { data, error } = await supabase
     .from("matches")
@@ -196,8 +196,10 @@ export async function advanceKnockoutSlots(matchId: string, status: "finished" |
   const match = data as MatchTeamRow | null;
   if (!match?.fifa_match_no || match.stage === "group" || !match.home_team_id || !match.away_team_id) return;
 
-  const winnerId = homeScore > awayScore ? match.home_team_id : match.away_team_id;
-  const loserId = homeScore > awayScore ? match.away_team_id : match.home_team_id;
+  const winnerId = homeScore === awayScore ? penaltyWinnerTeamId : homeScore > awayScore ? match.home_team_id : match.away_team_id;
+  if (!winnerId) return;
+
+  const loserId = winnerId === match.home_team_id ? match.away_team_id : match.home_team_id;
 
   const winnerSlot = `W${match.fifa_match_no}`;
   const loserSlot = `L${match.fifa_match_no}`;

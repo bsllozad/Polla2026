@@ -12,6 +12,7 @@ import { Match, Player, Team } from "@/shared/types/worldcup";
 type PredictionDraft = {
   homeScore: string;
   awayScore: string;
+  penaltyWinnerTeamId: string;
   homeScorerId: string;
   awayScorerId: string;
 };
@@ -51,9 +52,13 @@ function PredictionCard({
   const [draft, setDraft] = useState<PredictionDraft>({
     homeScore: "0",
     awayScore: "0",
+    penaltyWinnerTeamId: "",
     homeScorerId: "",
     awayScorerId: ""
   });
+  const scoreIsTie = draft.homeScore !== "" && draft.awayScore !== "" && Number(draft.homeScore) === Number(draft.awayScore);
+  const canPickPenaltyWinner = match.stage !== "group" && scoreIsTie;
+  const needsPenaltyWinner = canPickPenaltyWinner && !draft.penaltyWinnerTeamId;
 
   const mutation = useMutation({
     mutationFn: () =>
@@ -62,6 +67,7 @@ function PredictionCard({
         matchId: match.id,
         homeScore: Number(draft.homeScore),
         awayScore: Number(draft.awayScore),
+        penaltyWinnerTeamId: canPickPenaltyWinner ? draft.penaltyWinnerTeamId || undefined : undefined,
         homeScorerId: draft.homeScorerId || undefined,
         awayScorerId: draft.awayScorerId || undefined
       }),
@@ -76,6 +82,7 @@ function PredictionCard({
     setDraft({
       homeScore: String(storedPrediction?.homeScore ?? 0),
       awayScore: String(storedPrediction?.awayScore ?? 0),
+      penaltyWinnerTeamId: storedPrediction?.penaltyWinnerTeamId ?? "",
       homeScorerId: storedPrediction?.homeScorerId ?? "",
       awayScorerId: storedPrediction?.awayScorerId ?? ""
     });
@@ -83,7 +90,13 @@ function PredictionCard({
   }, [storedPrediction, participantId, match.id]);
 
   function updateDraft(key: keyof PredictionDraft, value: string) {
-    setDraft((current) => ({ ...current, [key]: value }));
+    setDraft((current) => {
+      const next = { ...current, [key]: value };
+      if ((key === "homeScore" || key === "awayScore") && Number(next.homeScore) !== Number(next.awayScore)) {
+        next.penaltyWinnerTeamId = "";
+      }
+      return next;
+    });
   }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -113,6 +126,31 @@ function PredictionCard({
             Goles {match.awayTeam.code}
             <input type="number" min="0" value={draft.awayScore} disabled={isLocked} onChange={(event) => updateDraft("awayScore", event.target.value)} />
           </label>
+          <fieldset className="penalty-choice" disabled={isLocked || !canPickPenaltyWinner}>
+            <legend>Si empatan, penales</legend>
+            <label>
+              <input
+                type="radio"
+                name={`penalty-winner-${match.id}`}
+                value={match.homeTeam.id}
+                checked={canPickPenaltyWinner && draft.penaltyWinnerTeamId === match.homeTeam.id}
+                onChange={(event) => updateDraft("penaltyWinnerTeamId", event.target.value)}
+              />
+              {match.homeTeam.flagEmoji} {match.homeTeam.code}
+            </label>
+            <label>
+              <input
+                type="radio"
+                name={`penalty-winner-${match.id}`}
+                value={match.awayTeam.id}
+                checked={canPickPenaltyWinner && draft.penaltyWinnerTeamId === match.awayTeam.id}
+                onChange={(event) => updateDraft("penaltyWinnerTeamId", event.target.value)}
+              />
+              {match.awayTeam.flagEmoji} {match.awayTeam.code}
+            </label>
+            {!canPickPenaltyWinner ? <small>Solo aplica en eliminacion con empate.</small> : null}
+            {needsPenaltyWinner ? <small className="form-error">Elige quien gana por penales para guardar este empate.</small> : null}
+          </fieldset>
           <label>
             Goleador {match.homeTeam.code}
             <select value={draft.homeScorerId} disabled={isLoadingPlayers || isLocked} onChange={(event) => updateDraft("homeScorerId", event.target.value)}>
@@ -156,7 +194,7 @@ function PredictionCard({
         {mutation.isError ? <p className="form-error">No pude guardar esta apuesta.</p> : null}
         {mutation.isSuccess ? <p className="form-success">Apuesta guardada.</p> : null}
         <div className="card-actions">
-          <Button disabled={!participantId || mutation.isPending || isLocked}><Save size={16} /> {mutation.isPending ? "Guardando..." : "Guardar apuesta"}</Button>
+          <Button disabled={!participantId || mutation.isPending || isLocked || needsPenaltyWinner}><Save size={16} /> {mutation.isPending ? "Guardando..." : "Guardar apuesta"}</Button>
         </div>
       </form>
     </Card>
