@@ -6,7 +6,7 @@
 4. Ejecuta `supabase/seed/002_teams.sql`.
 5. Ejecuta `supabase/seed/003_group_matches.sql`.
 6. Ejecuta `supabase/seed/004_knockout_slots.sql`.
-7. Ejecuta `supabase/seed/009_fix_knockout_slots.sql`, `supabase/seed/010_set_real_round32_bracket.sql` y `supabase/seed/011_fix_round32_june29_schedule.sql`.
+7. Ejecuta `supabase/seed/009_fix_knockout_slots.sql`, `supabase/seed/010_set_real_round32_bracket.sql`, `supabase/seed/011_fix_round32_june29_schedule.sql` y `supabase/seed/013_repair_knockout_bracket_and_data.sql`.
 8. Ejecuta `supabase/seed/006_players_fifa_squadlists.sql`.
 9. Ejecuta `supabase/seed/007_initial_participants.sql`.
 10. Ejecuta `supabase/seed/008_grants.sql`.

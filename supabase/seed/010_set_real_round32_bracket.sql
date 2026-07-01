@@ -5,9 +5,9 @@
 with round32(fifa_match_no, home_code, away_code) as (
   values
     (73, 'RSA', 'CAN'),
-    (74, 'BRA', 'JPN'),
-    (75, 'GER', 'PAR'),
-    (76, 'NED', 'MAR'),
+    (74, 'GER', 'PAR'),
+    (75, 'NED', 'MAR'),
+    (76, 'BRA', 'JPN'),
     (77, 'FRA', 'SWE'),
     (78, 'CIV', 'NOR'),
     (79, 'MEX', 'ECU'),

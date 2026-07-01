@@ -95,7 +95,7 @@ export function AdminResultsPage() {
   const [goalCounters, setGoalCounters] = useState<Record<string, GoalCounter>>({});
   const { data: matches = [] } = useQuery({
     queryKey: ["admin-result-matches", showAll],
-    queryFn: () => listMatches({ limit: 104, showAll })
+    queryFn: () => listMatches({ limit: 104, showAll, includeYesterday: true })
   });
   const orderedMatches = useMemo(
     () => [...matches].sort((left, right) => new Date(right.kickoffAt).getTime() - new Date(left.kickoffAt).getTime()),

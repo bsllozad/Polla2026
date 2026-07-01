@@ -45,7 +45,7 @@ export async function listUpcomingMatches(limit = 8): Promise<Match[]> {
   return listMatches({ limit });
 }
 
-export async function listMatches({ limit = 8, showAll = false }: { limit?: number; showAll?: boolean } = {}): Promise<Match[]> {
+export async function listMatches({ limit = 8, showAll = false, includeYesterday = false }: { limit?: number; showAll?: boolean; includeYesterday?: boolean } = {}): Promise<Match[]> {
   if (!supabase) return [];
 
   let query = supabase
@@ -67,7 +67,9 @@ export async function listMatches({ limit = 8, showAll = false }: { limit?: numb
   if (!showAll) {
     const startOfToday = new Date();
     startOfToday.setHours(0, 0, 0, 0);
-    query = query.gte("kickoff_at", startOfToday.toISOString());
+    const startDate = new Date(startOfToday);
+    if (includeYesterday) startDate.setDate(startDate.getDate() - 1);
+    query = query.gte("kickoff_at", startDate.toISOString());
   }
 
   const { data, error } = await query.limit(limit);
